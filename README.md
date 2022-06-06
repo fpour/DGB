@@ -141,5 +141,5 @@ python visualization/TET_plots.py
 The outputs are saved in *"visualization/figs/TEA"* or *"visualization/figs/TET"* folder for the *TEA* or *TET* plots, respectively.
 
 ### Acknowledgment
-We would like to thanks the authors of [TGAT](https://github.com/StatsDLMathsRecomSys/Inductive-representation-learning-on-temporal-graphs), [TGN](https://github.com/twitter-research/tgn), and [CAWN](https://github.com/snap-stanford/CAW) projects for providing access to their projects' code.
+We would like to thank the authors of [TGAT](https://github.com/StatsDLMathsRecomSys/Inductive-representation-learning-on-temporal-graphs), [TGN](https://github.com/twitter-research/tgn), and [CAWN](https://github.com/snap-stanford/CAW) projects for providing access to their projects' code.
 
