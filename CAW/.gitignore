@@ -1,0 +1,14 @@
+processed/*
+!processed/.gitkeep
+log/*
+!log/.gitkeep
+saved_checkpoints/*
+!saved_checkpoints/.gitkeep
+saved_models/*
+!saved_models/.gitkeep
+__pycache__/
+.idea/
+notebooks/.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/*
+.ipynb_checkpoints
+
