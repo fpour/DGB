@@ -34,7 +34,8 @@ matploblib==3.3.1
 ```
 
 #### Datasets and Processing
-All dynamic graph datasets are in *"DG_data"* folder.
+All dynamic graph datasets can be downloaded from [here](https://drive.google.com/file/d/1EGmV_js2DzocxwArhO12rizqPY2nZjSf/view?usp=sharing).
+Then, they can be located in *"DG_data"* folder.
 For conducting any experiments, the required data should be in the **data** folder under each model of interest.
 * For example, to train a *TGN* model on *Wikipedia* dataset, we can use the following command to move the edgelist to the right folder:
 ```{bash}
