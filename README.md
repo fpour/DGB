@@ -141,7 +141,7 @@ python visualization/TET_plots.py
 The outputs are saved in *"visualization/figs/TEA"* or *"visualization/figs/TET"* folder for the *TEA* or *TET* plots, respectively.
 
 
-#### Maintenance Plan
+### Maintenance Plan
 Since investigation of temporal graphs has significant impact on sevearl domains, we plan to develop and extend this project.
 In particular, we plan on the following directions:
 * Including more tem temporal graph datasets from even larger selection of domains; e.g. biological, chemical graphs, etc.
