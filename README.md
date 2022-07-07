@@ -140,6 +140,15 @@ python visualization/TET_plots.py
 
 The outputs are saved in *"visualization/figs/TEA"* or *"visualization/figs/TET"* folder for the *TEA* or *TET* plots, respectively.
 
+
+#### Maintenance Plan
+Since investigation of temporal graphs has significant impact on sevearl domains, we plan to develop and extend this project.
+In particular, we plan on the following directions:
+* Including more tem temporal graph datasets from even larger selection of domains; e.g. biological, chemical graphs, etc.
+* Including additional temporal graph learning methods as they become available.
+* Including inductive link prediction settings.
+
+
 ### Acknowledgment
 We would like to thank the authors of [TGAT](https://github.com/StatsDLMathsRecomSys/Inductive-representation-learning-on-temporal-graphs), [TGN](https://github.com/twitter-research/tgn), and [CAWN](https://github.com/snap-stanford/CAW) projects for providing access to their projects' code.
 
