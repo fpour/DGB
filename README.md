@@ -142,7 +142,7 @@ The outputs are saved in *"visualization/figs/TEA"* or *"visualization/figs/TET"
 
 
 ### Maintenance Plan
-Since investigation of temporal graphs has significant impact on sevearl domains, we plan to develop and extend this project.
+Since investigation of temporal graphs has significant impacts on several domains, we plan to develop and extend this project in several ways.
 In particular, we plan on the following directions:
 * Including more tem temporal graph datasets from even larger selection of domains; e.g. biological, chemical graphs, etc.
 * Including additional temporal graph learning methods as they become available.
