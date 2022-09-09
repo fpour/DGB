@@ -4,18 +4,7 @@
 
 ## Introduction
 
-Recently, increased attention has been given to the development of novel dynamic graph representation learning methods. 
-In this work,
-we revisit current evaluation settings for link prediction on dynamic graphs. 
-Using two novel visualization techniques for edge statistics in dynamic graphs, we observe that a large portion of edges in dynamic graphs naturally reoccur over time, and recurrence patterns vary significantly across datasets.
-
-Based on these observations and motivated by real-world applications, we first propose two novel negative sampling strategies for evaluation of link prediction in dynamic graphs. 
-Performance of existing methods degrades significantly when the set of negative edges used during evaluation is chosen more selectively. 
-This shows that it is necessary to conduct different negative sampling strategies beyond simple random sampling to fully understand the performance of a given method. 
-Second, we propose a simple baseline, EdgeBank, solely based on memorizing past edges. 
-We gain surprisingly strong performance with EdgeBank across multiple settings and we suggest that future methods should consider comparing their performance against this simple memorization approach. 
-Lastly, we introduce five new dynamic networks from novel graph domains not present in the current benchmarks. 
-These datasets offer new challenges for link prediction methods and enable a more robust evaluation setup.
+Despite the prevalence of recent success in learning from static graphs, learning from time-evolving graphs remains an open challenge. In this work, we design new, more stringent evaluation procedures for link prediction specific to dynamic graphs, which reflect real-world considerations, to better compare the strengths and weaknesses of methods. First, we create two visualization techniques to understand the reoccurring patterns of edges over time and show that many edges reoccur at later time steps. Based on this observation, we propose a pure memorization baseline called EdgeBank. EdgeBank achieves surprisingly strong performance across multiple settings because easy negative edges are often used in current evaluation setting. To evaluate against more difficult negative edges, we introduce two more challenging negative sampling strategies that improve robustness and better match real-world applications. Lastly, we introduce six new dynamic graph datasets from a diverse set of domains missing from current benchmarks, providing new challenges and opportunities for future research.
 
 
 
@@ -34,7 +23,7 @@ matploblib==3.3.1
 ```
 
 #### Datasets and Processing
-All dynamic graph datasets can be downloaded from [here](https://drive.google.com/file/d/1EGmV_js2DzocxwArhO12rizqPY2nZjSf/view?usp=sharing).
+All dynamic graph datasets can be downloaded from [here](https://zenodo.org/record/7008205#.YxtIwi0r1hC).
 Then, they can be located in *"DG_data"* folder.
 For conducting any experiments, the required data should be in the **data** folder under each model of interest.
 * For example, to train a *TGN* model on *Wikipedia* dataset, we can use the following command to move the edgelist to the right folder:
