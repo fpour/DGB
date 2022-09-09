@@ -7,7 +7,7 @@
 Despite the prevalence of recent success in learning from static graphs, learning from time-evolving graphs remains an open challenge. In this work, we design new, more stringent evaluation procedures for link prediction specific to dynamic graphs, which reflect real-world considerations, to better compare the strengths and weaknesses of methods. First, we create two visualization techniques to understand the reoccurring patterns of edges over time and show that many edges reoccur at later time steps. Based on this observation, we propose a pure memorization baseline called EdgeBank. EdgeBank achieves surprisingly strong performance across multiple settings because easy negative edges are often used in current evaluation setting. To evaluate against more difficult negative edges, we introduce two more challenging negative sampling strategies that improve robustness and better match real-world applications. Lastly, we introduce six new dynamic graph datasets from a diverse set of domains missing from current benchmarks, providing new challenges and opportunities for future research.
 
 
-<img src="./visualization/EdgeBank_&_NS.png" width="70%" align="center">
+<p align="center"><img src="./visualization/EdgeBank_&_NS.png" width="65%">
 
 
 The ranking of different methods changes in the proposed negative sampling settings which contains more difficult negative edges. Our proposed baselines (horizontal lines) show competitive performance, in particular in standard setup. 
