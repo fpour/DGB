@@ -38,8 +38,8 @@ def eval_edge_prediction_original(model, negative_edge_sampler, data, n_neighbor
             _, negative_samples = negative_edge_sampler.sample(size)
 
             pos_prob, neg_prob = model.compute_edge_probabilities_original(sources_batch, destinations_batch,
-                                                                  negative_samples, timestamps_batch,
-                                                                  edge_idxs_batch, n_neighbors)
+                                                                           negative_samples, timestamps_batch,
+                                                                           edge_idxs_batch, n_neighbors)
 
             pred_score = np.concatenate([(pos_prob).cpu().numpy(), (neg_prob).cpu().numpy()])
             true_label = np.concatenate([np.ones(size), np.zeros(size)])
@@ -95,13 +95,14 @@ def eval_edge_prediction_modified(model, negative_edge_sampler, data, n_neighbor
 
             pos_e = True
             pos_prob = model.compute_edge_probabilities_modified(sources_batch, destinations_batch, timestamps_batch,
-                                                        edge_idxs_batch,
-                                                        pos_e, n_neighbors)
+                                                                 edge_idxs_batch,
+                                                                 pos_e, n_neighbors)
             pos_e = False
-            neg_prob = model.compute_edge_probabilities_modified(negative_samples_sources, negative_samples_destinations,
-                                                        timestamps_batch,
-                                                        edge_idxs_batch,
-                                                        pos_e, n_neighbors)
+            neg_prob = model.compute_edge_probabilities_modified(negative_samples_sources,
+                                                                 negative_samples_destinations,
+                                                                 timestamps_batch,
+                                                                 edge_idxs_batch,
+                                                                 pos_e, n_neighbors)
 
             pred_score = np.concatenate([(pos_prob).cpu().numpy(), (neg_prob).cpu().numpy()])
             true_label = np.concatenate([np.ones(size), np.zeros(size)])
@@ -116,6 +117,82 @@ def eval_edge_prediction_modified(model, negative_edge_sampler, data, n_neighbor
         avg_measures_dict = measures_df.mean()
 
     return np.mean(val_ap), np.mean(val_auc), avg_measures_dict
+
+def extract_edge_embeddings(model, negative_edge_sampler, data, n_neighbors, batch_size=200):
+    """
+    Convention for saving the embedding is as follows:
+        - source id (length: 1)
+        - destination id (length: 1)
+        - timestamp (length: 1)
+        - edge index (length: 1)
+        - label (positive: 1; negative: 0) (length: 1)
+        - source embedding (length: 172)
+        - destination embedding (length: 172)
+    """
+
+    # Ensures the random sampler uses a seed for evaluation (i.e. we sample always the same
+    # negatives for validation / test set)
+    assert negative_edge_sampler.seed is not None
+    negative_edge_sampler.reset_random_state()
+
+    with torch.no_grad():
+        model = model.eval()
+        TEST_BATCH_SIZE = batch_size
+        num_test_instance = len(data.sources)
+        num_test_batch = math.ceil(num_test_instance / TEST_BATCH_SIZE)
+
+        edge_emb = []
+        for k in range(num_test_batch):
+            s_idx = k * TEST_BATCH_SIZE
+            e_idx = min(num_test_instance, s_idx + TEST_BATCH_SIZE)
+            sources_batch = data.sources[s_idx:e_idx]
+            destinations_batch = data.destinations[s_idx:e_idx]
+            timestamps_batch = data.timestamps[s_idx:e_idx]
+            edge_idxs_batch = data.edge_idxs[s_idx: e_idx]
+
+            size = len(sources_batch)
+
+            if negative_edge_sampler.neg_sample != 'rnd':
+                negative_samples_sources, negative_samples_destinations = \
+                    negative_edge_sampler.sample(size,
+                                                 timestamps_batch[0],
+                                                 timestamps_batch[-1])
+            else:
+                negative_samples_sources, negative_samples_destinations = negative_edge_sampler.sample(size)
+                negative_samples_sources = sources_batch
+            # positive edges
+            pos_e = True
+            pos_source_node_embedding, pos_destination_node_embedding = model.compute_temporal_embeddings_modified(
+                sources_batch, destinations_batch, timestamps_batch, edge_idxs_batch, pos_e, n_neighbors)
+            edge_lbl = np.ones((size, 1))
+
+            pos_edge_features = np.concatenate([np.asarray(sources_batch).reshape(size, 1),
+                                                np.asarray(destinations_batch).reshape(size, 1),
+                                                np.asarray(timestamps_batch).reshape(size, 1),
+                                                np.asarray(edge_idxs_batch).reshape(size, 1),
+                                                edge_lbl, pos_source_node_embedding.cpu().numpy(),
+                                                pos_destination_node_embedding.cpu().numpy()], axis=1)
+            # edge_emb = np.append(edge_emb, pos_edge_features, axis=0)
+            edge_emb.append(pos_edge_features)
+
+            # negative edges
+            pos_e = False
+            neg_source_node_embedding, neg_destination_node_embedding = model.compute_temporal_embeddings_modified(
+                negative_samples_sources, negative_samples_destinations, timestamps_batch, edge_idxs_batch, pos_e, n_neighbors)
+            edge_lbl = np.zeros((size, 1))
+            neg_edge_features = np.concatenate([np.asarray(negative_samples_sources).reshape(size, 1),
+                                                np.asarray(negative_samples_destinations).reshape(size, 1),
+                                                np.asarray(timestamps_batch).reshape(size, 1),
+                                                np.asarray(edge_idxs_batch).reshape(size, 1),
+                                                edge_lbl,
+                                                neg_source_node_embedding.cpu().numpy(),
+                                                neg_destination_node_embedding.cpu().numpy()], axis=1)
+            # edge_emb = np.append(edge_emb, neg_edge_features, axis=0)
+            edge_emb.append(neg_edge_features)
+        edge_emb = np.concatenate([np.asarray(emb_arr) for emb_arr in edge_emb], axis=0)
+
+    return edge_emb
+
 
 
 def get_measures_for_threshold(y_true, y_pred_score, threshold):
@@ -166,10 +243,10 @@ def extra_measures(y_true, y_pred_score):
 
     # threshold = 0.5
     perf_half_dict = get_measures_for_threshold(y_true, y_pred_score, 0.5)
-    perf_dict['acc_thr_0.5'] = perf_half_dict['acc']
-    perf_dict['prec_thr_0.5'] = perf_half_dict['prec']
-    perf_dict['rec_thr_0.5'] = perf_half_dict['rec']
-    perf_dict['f1_thr_0.5'] = perf_half_dict['f1']
+    perf_dict['acc'] = perf_half_dict['acc']
+    perf_dict['prec'] = perf_half_dict['prec']
+    perf_dict['rec'] = perf_half_dict['rec']
+    perf_dict['f1'] = perf_half_dict['f1']
 
     return perf_dict
 

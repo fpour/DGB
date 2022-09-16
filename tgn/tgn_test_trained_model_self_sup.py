@@ -1,5 +1,9 @@
 """
 load a trained model for link prediction and test its performance on a set of positive and negative edges
+Binary Classification
+Different sets of negative edges including historical or inductive negative edges
+
+Date: Jan. 08, 2022
 """
 
 import math
@@ -212,9 +216,10 @@ def main():
                   use_source_embedding_in_message=args.use_source_embedding_in_message,
                   dyrep=args.dyrep)
         # load saved parameters of the model
-        tgn.load_state_dict(torch.load(MODEL_SAVE_PATH))
+        tgn.load_state_dict(torch.load(MODEL_SAVE_PATH))  # , strict=False
         tgn = tgn.to(device)
         tgn.eval()
+
 
         # Training has finished, we have loaded the best model, and we want to backup its current
         # memory (which has seen validation edges) so that it can also be used when testing on unseen

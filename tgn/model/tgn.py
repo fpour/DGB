@@ -24,6 +24,7 @@ class TGN(torch.nn.Module):
                  use_destination_embedding_in_message=False,
                  use_source_embedding_in_message=False,
                  dyrep=False):
+                 # num_class=1):  # MC
         super(TGN, self).__init__()
 
         self.n_layers = n_layers
@@ -97,21 +98,22 @@ class TGN(torch.nn.Module):
         self.affinity_score = MergeLayer(self.n_node_features, self.n_node_features,
                                          self.n_node_features,
                                          1)
+                                         # num_class)  # MC
 
     def compute_temporal_embeddings_original(self, source_nodes, destination_nodes, negative_nodes, edge_times,
                                              edge_idxs, n_neighbors=20):
         """
-        Compute temporal embeddings for sources, destinations, and negatively sampled destinations.
+    Compute temporal embeddings for sources, destinations, and negatively sampled destinations.
 
-        source_nodes [batch_size]: source ids.
-        :param destination_nodes [batch_size]: destination ids
-        :param negative_nodes [batch_size]: ids of negative sampled destination
-        :param edge_times [batch_size]: timestamp of interaction
-        :param edge_idxs [batch_size]: index of interaction
-        :param n_neighbors [scalar]: number of temporal neighbor to consider in each convolutional
-        layer
-        :return: Temporal embeddings for sources, destinations and negatives
-        """
+    source_nodes [batch_size]: source ids.
+    :param destination_nodes [batch_size]: destination ids
+    :param negative_nodes [batch_size]: ids of negative sampled destination
+    :param edge_times [batch_size]: timestamp of interaction
+    :param edge_idxs [batch_size]: index of interaction
+    :param n_neighbors [scalar]: number of temporal neighbor to consider in each convolutional
+    layer
+    :return: Temporal embeddings for sources, destinations and negatives
+    """
 
         n_samples = len(source_nodes)
         nodes = np.concatenate([source_nodes, destination_nodes, negative_nodes])
@@ -194,7 +196,7 @@ class TGN(torch.nn.Module):
         return source_node_embedding, destination_node_embedding, negative_node_embedding
 
     def compute_temporal_embeddings_modified(self, source_nodes, destination_nodes, edge_times,
-                                    edge_idxs, pos_e, n_neighbors=20):
+                                             edge_idxs, pos_e, n_neighbors=20):
         """
         Compute temporal embeddings for sources, destinations, and negatively sampled destinations.
 
@@ -229,7 +231,8 @@ class TGN(torch.nn.Module):
             ### and the time for which we want to compute the embedding of a node
             source_time_diffs = torch.LongTensor(edge_times).to(self.device) - last_update[source_nodes].long()
             source_time_diffs = (source_time_diffs - self.mean_time_shift_src) / self.std_time_shift_src
-            destination_time_diffs = torch.LongTensor(edge_times).to(self.device) - last_update[destination_nodes].long()
+            destination_time_diffs = torch.LongTensor(edge_times).to(self.device) - last_update[
+                destination_nodes].long()
             destination_time_diffs = (destination_time_diffs - self.mean_time_shift_dst) / self.std_time_shift_dst
 
             time_diffs = torch.cat([source_time_diffs, destination_time_diffs], dim=0)
@@ -307,11 +310,10 @@ class TGN(torch.nn.Module):
                                                negative_node_embedding])).squeeze(dim=0)
         pos_score = score[:n_samples]
         neg_score = score[n_samples:]
-
         return pos_score.sigmoid(), neg_score.sigmoid()
 
     def compute_edge_probabilities_modified(self, source_nodes, destination_nodes, edge_times,
-                                   edge_idxs, pos_e, n_neighbors=20):
+                                            edge_idxs, pos_e, n_neighbors=20):
         """
         Compute probabilities for edges between sources and destination and between sources and
         negatives by first computing temporal embeddings using the TGN encoder and then feeding them
@@ -331,11 +333,19 @@ class TGN(torch.nn.Module):
 
         score = self.affinity_score(torch.cat([source_node_embedding, ], dim=0),
                                     torch.cat([destination_node_embedding, ])).squeeze(dim=0)
-        # pos_score = score[:n_samples]
-        # neg_score = score[n_samples:]
-        # return pos_score.sigmoid(), neg_score.sigmoid()
 
         return score.sigmoid()
+
+    def compute_edge_probabilities_MC(self, source_nodes, destination_nodes, edge_times,
+                                      edge_idxs, pos_e, n_neighbors=20):
+        source_node_embedding, destination_node_embedding = self.compute_temporal_embeddings_modified(
+            source_nodes, destination_nodes, edge_times, edge_idxs, pos_e, n_neighbors)
+
+        # score = self.affinity_score(torch.cat([source_node_embedding, ], dim=1),
+        #                             torch.cat([destination_node_embedding, ])).squeeze(dim=0)
+        score = self.affinity_score(source_node_embedding,
+                                    destination_node_embedding).squeeze(dim=0)
+        return score
 
     def update_memory(self, nodes, messages):
         # Aggregate messages for the same nodes
