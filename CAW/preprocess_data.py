@@ -1,5 +1,10 @@
 """
+This is the exact copy of TGN/utils/preprocess_data.py
+Just to preprocess and save edge lists as it is required for CAW-N
+"""
+"""
 Goal: to convert the initial edge list of the network to the appropriate format needed by the model
+Note the "pre" in the name of the file: preprocess_data.py
 """
 
 import json
@@ -21,7 +26,7 @@ def preprocess(data_name):
       u = int(e[0])  # user_id
       i = int(e[1])  # item_id
 
-      ts = float(e[2])  # timestamp  --> assumed in ascending order
+      ts = float(e[2])  # timestamp  --> assumed in ascending order (I've checked it)
       label = float(e[3])  # int(e[3])  # state_label
 
       feat = np.array([float(x) for x in e[4:]])  # edge features
@@ -86,7 +91,7 @@ def run(data_name, bipartite=True, n_node_feat=172):
 ### scripts
 ###########################################################################
 
-parser = argparse.ArgumentParser('Interface for CAW data preprocessing')
+parser = argparse.ArgumentParser('Interface for TGN data preprocessing')
 parser.add_argument('--data', type=str, help='Dataset name (eg. wikipedia or reddit)',
                     default='wikipedia')
 parser.add_argument('--bipartite', action='store_true', help='Whether the graph is bipartite')

@@ -1,3 +1,9 @@
+"""
+load a trained model for link prediction and test its performance on a set of positive and negative edges
+
+Date: Jan. 24, 2022
+"""
+
 import pandas as pd
 from log import *
 from parser import *
@@ -38,6 +44,7 @@ N_RUNS = args.n_runs
 VAL_RATIO = args.val_ratio
 TEST_RATIO = args.test_ratio
 SEED = args.seed
+NEG_SAMPLE = args.neg_sample
 assert (CPU_CORES >= -1)
 set_random_seed(SEED)
 logger, get_checkpoint_path, best_model_path = set_up_logger(args, sys_argv)
@@ -138,10 +145,29 @@ ngh_finders = partial_ngh_finder, full_ngh_finder
 
 # create random samplers to generate train/val/test instances
 # Set seeds for validation and testing so negatives are the same across different runs
-train_rand_sampler = RandEdgeSampler((train_src_l,), (train_dst_l,))
-val_rand_sampler = RandEdgeSampler((train_src_l, val_src_l), (train_dst_l, val_dst_l), seed=0)
-test_rand_sampler = RandEdgeSampler((train_src_l, val_src_l, test_src_l), (train_dst_l, val_dst_l, test_dst_l), seed=1)
-rand_samplers = train_rand_sampler, val_rand_sampler
+# train_rand_sampler = RandEdgeSampler((train_src_l,), (train_dst_l,))
+# val_rand_sampler = RandEdgeSampler((train_src_l, val_src_l), (train_dst_l, val_dst_l), seed=0)
+# test_rand_sampler = RandEdgeSampler((train_src_l, val_src_l, test_src_l), (train_dst_l, val_dst_l, test_dst_l), seed=1)
+# rand_samplers = train_rand_sampler, val_rand_sampler
+
+if NEG_SAMPLE != 'rnd':
+    # RandEdgeSampler_adversarial(src_list, dst_list, ts_list, last_ts_train_val, NEG_SAMPLE, seed=None, rnd_sample_ratio=0)
+    # train_rand_sampler = RandEdgeSampler_adversarial(train_src_l, train_dst_l, train_ts_l)
+    # val_rand_sampler = RandEdgeSampler_adversarial(np.concatenate((train_src_l, val_src_l)),
+    #                                        np.concatenate((train_dst_l, val_dst_l)),
+    #                                        np.concatenate((train_ts_l, val_ts_l)), seed=0)
+    test_rand_sampler = RandEdgeSampler_adversarial(np.concatenate((train_src_l, val_src_l, test_src_l)),
+                                                    np.concatenate((train_dst_l, val_dst_l, test_dst_l)),
+                                                    np.concatenate((train_ts_l, val_ts_l, test_ts_l)), val_ts_l[-1],
+                                                    NEG_SAMPLE, seed=1)
+    # rand_samplers = train_rand_sampler, val_rand_sampler
+else:
+    # train_rand_sampler = RandEdgeSampler((train_src_l,), (train_dst_l, ))
+    # val_rand_sampler = RandEdgeSampler((train_src_l, val_src_l), (train_dst_l, val_dst_l), seed=0)
+    test_rand_sampler = RandEdgeSampler((train_src_l, val_src_l, test_src_l),
+                                        (train_dst_l, val_dst_l, test_dst_l), seed=1)
+    # rand_samplers = train_rand_sampler, val_rand_sampler
+
 
 # multiprocessing memory setting
 rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
@@ -151,10 +177,18 @@ resource.setrlimit(resource.RLIMIT_NOFILE, (200 * args.bs, rlimit[1]))
 device_string = 'cuda:{}'.format(GPU) if torch.cuda.is_available() else 'cpu'
 device = torch.device(device_string)
 
+logger.info("************************************")
+logger.info("*********** Test starts *************")
+start_test = time.time()
+
 for i in range(N_RUNS):
     start_time_run = time.time()
     logger.info("************************************")
     logger.info("********** Run {} starts. **********".format(i))
+
+    runtime_id = '{}-{}-{}'.format('CAWN', args.mode[0], args.agg)
+    MODEL_SAVE_PATH = f'./saved_models/{runtime_id}-{args.data}-{i}.pth'
+
     # model initialization
     cawn = CAWN(n_feat, e_feat, agg=AGG,
                 num_layers=NUM_LAYER, use_time=USE_TIME, attn_agg_method=ATTN_AGG_METHOD, attn_mode=ATTN_MODE,
@@ -162,14 +196,11 @@ for i in range(N_RUNS):
                 num_neighbors=NUM_NEIGHBORS, walk_n_head=WALK_N_HEAD, walk_mutual=WALK_MUTUAL,
                 walk_linear_out=args.walk_linear_out,
                 cpu_cores=CPU_CORES, verbosity=VERBOSITY, get_checkpoint_path=get_checkpoint_path)
-    cawn.to(device)
-    optimizer = torch.optim.Adam(cawn.parameters(), lr=LEARNING_RATE)
-    criterion = torch.nn.BCELoss()
-    early_stopper = EarlyStopMonitor(tolerance=TOLERANCE)
 
-    # start train and val phases
-    train_val(train_val_data, cawn, args.mode, BATCH_SIZE, NUM_EPOCH, criterion, optimizer, early_stopper, ngh_finders,
-              rand_samplers, logger)
+    # load saved parameters of the model
+    cawn.load_state_dict(torch.load(MODEL_SAVE_PATH))
+    cawn = cawn.to(device)
+    cawn.eval()
 
     # final testing
     cawn.update_ngh_finder(full_ngh_finder)  # remember that testing phase should always use the full neighbor finder
@@ -209,19 +240,5 @@ for i in range(N_RUNS):
         for measure_name, measure_value in test_new_old_avg_measures_dict.items():
             logger.info('Test statistics: {} new-old nodes -- {}: {}'.format(args.mode, measure_name, measure_value))
 
-
-    # save model
-    logger.info('Saving CAWN model ...')
-    # torch.save(cawn.state_dict(), best_model_path)
-    runtime_id = '{}-{}-{}'.format('CAWN', args.mode[0], args.agg)
-    MODEL_SAVE_PATH = f'./saved_models/{runtime_id}-{args.data}-{i}.pth'
-    torch.save(cawn.state_dict(), MODEL_SAVE_PATH)
-    logger.info('CAWN model saved')
-
-    # save one line result
-    save_oneline_result('log/', args, [test_acc, test_auc, test_ap, test_new_new_acc, test_new_new_ap,
-                                       test_new_new_auc, test_new_old_acc, test_new_old_ap, test_new_old_auc])
-    # save walk_encodings_scores
-    # checkpoint_dir = '/'.join(cawn.get_checkpoint_path(0).split('/')[:-1])
-    # cawn.save_walk_encodings_scores(checkpoint_dir)
     logger.info("Run {}, elapsed time: {} seconds.".format(i, str(time.time() - start_time_run)))
+logger.info('Info: Total elapsed time: {} seconds.'.format(time.time() - start_test))

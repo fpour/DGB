@@ -57,88 +57,88 @@ class RandEdgeSampler(object):
         self.random_state = np.random.RandomState(self.seed)
 
 
-class RandEdgeSampler_NRE(object):
-    """
-    ~ "history"
-    Random Negative Edge Sampling: NRE: "Non-Repeating Edges" are randomly sampled to make task more complicated
-    Note: the edge history is constructed in a way that it inherently preserve the direction information
-    Note: we consider that randomly sampled edges come from two sources:
-      1. some are randomly sampled from all possible pairs of edges
-      2. some are randomly sampled from edges seen before but are not repeating in current batch
-    """
-
-    def __init__(self, src_list, dst_list, ts_list, seed=None, rnd_sample_ratio=0):
-        """
-        'src_list', 'dst_list', 'ts_list' are related to the full data! All possible edges in train, validation, test
-        """
-        self.seed = None
-        self.neg_sample = 'nre'  # negative edge sampling method: non-repeating edges
-        self.rnd_sample_ratio = rnd_sample_ratio
-        self.src_list = src_list
-        self.dst_list = dst_list
-        self.ts_list = ts_list
-        self.src_list_distinct = np.unique(src_list)
-        self.dst_list_distinct = np.unique(dst_list)
-        self.ts_list_distinct = np.unique(ts_list)
-        self.ts_init = min(self.ts_list_distinct)
-
-        if seed is not None:
-            self.seed = seed
-            np.random.seed(self.seed)
-            self.random_state = np.random.RandomState(self.seed)
-
-    def get_edges_in_time_interval(self, start_ts, end_ts):
-        """
-        return edges of a specific time interval
-        """
-        valid_ts_interval = (self.ts_list >= start_ts) * (self.ts_list <= end_ts)
-        interval_src_l = self.src_list[valid_ts_interval]
-        interval_dst_l = self.dst_list[valid_ts_interval]
-        interval_edges = {}
-        for src, dst in zip(interval_src_l, interval_dst_l):
-            if (src, dst) not in interval_edges:
-                interval_edges[(src, dst)] = 1
-        return interval_edges
-
-    def get_difference_edge_list(self, first_e_set, second_e_set):
-        """
-        return edges in the first_e_set that are not in the second_e_set
-        """
-        difference_e_set = set(first_e_set) - set(second_e_set)
-        src_l, dst_l = [], []
-        for e in difference_e_set:
-            src_l.append(e[0])
-            dst_l.append(e[1])
-        return np.array(src_l), np.array(dst_l)
-
-    def sample(self, size, current_split_start_ts, current_split_end_ts):
-        history_e_dict = self.get_edges_in_time_interval(self.ts_init, current_split_start_ts)
-        current_split_e_dict = self.get_edges_in_time_interval(current_split_start_ts, current_split_end_ts)
-        non_repeating_e_src_l, non_repeating_e_dst_l = self.get_difference_edge_list(history_e_dict,
-                                                                                     current_split_e_dict)
-
-        num_smp_rnd = int(self.rnd_sample_ratio * size)
-        num_smp_from_hist = size - num_smp_rnd
-        if num_smp_from_hist > len(non_repeating_e_src_l):
-            num_smp_from_hist = len(non_repeating_e_src_l)
-            num_smp_rnd = size - num_smp_from_hist
-
-        replace = len(self.src_list_distinct) < num_smp_rnd
-        rnd_src_index = np.random.choice(len(self.src_list_distinct), size=num_smp_rnd, replace=replace)
-
-        replace = len(self.dst_list_distinct) < num_smp_rnd
-        rnd_dst_index = np.random.choice(len(self.dst_list_distinct), size=num_smp_rnd, replace=replace)
-
-        replace = len(non_repeating_e_src_l) < num_smp_from_hist
-        nre_e_index = np.random.choice(len(non_repeating_e_src_l), size=num_smp_from_hist, replace=replace)
-
-        negative_src_l = np.concatenate([self.src_list_distinct[rnd_src_index], non_repeating_e_src_l[nre_e_index]])
-        negative_dst_l = np.concatenate([self.dst_list_distinct[rnd_dst_index], non_repeating_e_dst_l[nre_e_index]])
-
-        return negative_src_l, negative_dst_l
-
-    def reset_random_state(self):
-        self.random_state = np.random.RandomState(self.seed)
+# class RandEdgeSampler_NRE(object):
+#     """
+#     ~ "history"
+#     Random Negative Edge Sampling: NRE: "Non-Repeating Edges" are randomly sampled to make task more complicated
+#     Note: the edge history is constructed in a way that it inherently preserve the direction information
+#     Note: we consider that randomly sampled edges come from two sources:
+#       1. some are randomly sampled from all possible pairs of edges
+#       2. some are randomly sampled from edges seen before but are not repeating in current batch
+#     """
+#
+#     def __init__(self, src_list, dst_list, ts_list, seed=None, rnd_sample_ratio=0):
+#         """
+#         'src_list', 'dst_list', 'ts_list' are related to the full data! All possible edges in train, validation, test
+#         """
+#         self.seed = None
+#         self.neg_sample = 'nre'  # negative edge sampling method: non-repeating edges
+#         self.rnd_sample_ratio = rnd_sample_ratio
+#         self.src_list = src_list
+#         self.dst_list = dst_list
+#         self.ts_list = ts_list
+#         self.src_list_distinct = np.unique(src_list)
+#         self.dst_list_distinct = np.unique(dst_list)
+#         self.ts_list_distinct = np.unique(ts_list)
+#         self.ts_init = min(self.ts_list_distinct)
+#
+#         if seed is not None:
+#             self.seed = seed
+#             np.random.seed(self.seed)
+#             self.random_state = np.random.RandomState(self.seed)
+#
+#     def get_edges_in_time_interval(self, start_ts, end_ts):
+#         """
+#         return edges of a specific time interval
+#         """
+#         valid_ts_interval = (self.ts_list >= start_ts) * (self.ts_list <= end_ts)
+#         interval_src_l = self.src_list[valid_ts_interval]
+#         interval_dst_l = self.dst_list[valid_ts_interval]
+#         interval_edges = {}
+#         for src, dst in zip(interval_src_l, interval_dst_l):
+#             if (src, dst) not in interval_edges:
+#                 interval_edges[(src, dst)] = 1
+#         return interval_edges
+#
+#     def get_difference_edge_list(self, first_e_set, second_e_set):
+#         """
+#         return edges in the first_e_set that are not in the second_e_set
+#         """
+#         difference_e_set = set(first_e_set) - set(second_e_set)
+#         src_l, dst_l = [], []
+#         for e in difference_e_set:
+#             src_l.append(e[0])
+#             dst_l.append(e[1])
+#         return np.array(src_l), np.array(dst_l)
+#
+#     def sample(self, size, current_split_start_ts, current_split_end_ts):
+#         history_e_dict = self.get_edges_in_time_interval(self.ts_init, current_split_start_ts)
+#         current_split_e_dict = self.get_edges_in_time_interval(current_split_start_ts, current_split_end_ts)
+#         non_repeating_e_src_l, non_repeating_e_dst_l = self.get_difference_edge_list(history_e_dict,
+#                                                                                      current_split_e_dict)
+#
+#         num_smp_rnd = int(self.rnd_sample_ratio * size)
+#         num_smp_from_hist = size - num_smp_rnd
+#         if num_smp_from_hist > len(non_repeating_e_src_l):
+#             num_smp_from_hist = len(non_repeating_e_src_l)
+#             num_smp_rnd = size - num_smp_from_hist
+#
+#         replace = len(self.src_list_distinct) < num_smp_rnd
+#         rnd_src_index = np.random.choice(len(self.src_list_distinct), size=num_smp_rnd, replace=replace)
+#
+#         replace = len(self.dst_list_distinct) < num_smp_rnd
+#         rnd_dst_index = np.random.choice(len(self.dst_list_distinct), size=num_smp_rnd, replace=replace)
+#
+#         replace = len(non_repeating_e_src_l) < num_smp_from_hist
+#         nre_e_index = np.random.choice(len(non_repeating_e_src_l), size=num_smp_from_hist, replace=replace)
+#
+#         negative_src_l = np.concatenate([self.src_list_distinct[rnd_src_index], non_repeating_e_src_l[nre_e_index]])
+#         negative_dst_l = np.concatenate([self.dst_list_distinct[rnd_dst_index], non_repeating_e_dst_l[nre_e_index]])
+#
+#         return negative_src_l, negative_dst_l
+#
+#     def reset_random_state(self):
+#         self.random_state = np.random.RandomState(self.seed)
 
 
 class RandEdgeSampler_adversarial(object):
@@ -208,11 +208,11 @@ class RandEdgeSampler_adversarial(object):
 
     def sample_hist_NRE(self, size, current_split_start_ts, current_split_end_ts):
         """
-        method one:
-        "historical adversarial sampling": (~ inductive historical edges)
-        randomly samples among previously seen edges that are not repeating in current batch,
-        fill in any remaining with randomly sampled
-        """
+    method one:
+    "historical adversarial sampling": (~ inductive historical edges)
+    randomly samples among previously seen edges that are not repeating in current batch,
+    fill in any remaining with randomly sampled
+    """
         history_e_dict = self.get_edges_in_time_interval(self.ts_init, current_split_start_ts)
         current_split_e_dict = self.get_edges_in_time_interval(current_split_start_ts, current_split_end_ts)
         non_repeating_e_src_l, non_repeating_e_dst_l = self.get_difference_edge_list(history_e_dict,
@@ -239,11 +239,11 @@ class RandEdgeSampler_adversarial(object):
 
     def sample_induc_NRE(self, size, current_split_start_ts, current_split_end_ts):
         """
-        method two:
-        "inductive adversarial sampling": (~ inductive non repeating edges)
-        considers only edges that have been seen (in red region),
-        fill in any remaining with randomly sampled
-        """
+    method two:
+    "inductive adversarial sampling": (~ inductive non repeating edges)
+    considers only edges that have been seen (in red region),
+    fill in any remaining with randomly sampled
+    """
         history_e_dict = self.get_edges_in_time_interval(self.ts_init, current_split_start_ts)
         current_split_e_dict = self.get_edges_in_time_interval(current_split_start_ts, current_split_end_ts)
         induc_adversarial_e = set(set(history_e_dict) - set(self.e_train_val_l)) - set(current_split_e_dict)
@@ -274,6 +274,133 @@ class RandEdgeSampler_adversarial(object):
 
     def reset_random_state(self):
         self.random_state = np.random.RandomState(self.seed)
+
+class RandEdgeSampler_TMC(object):
+  """
+  Random Edge Sampling based for Temporal Multi-Class situations
+  sampled edges are from different categories considering the temporal history of the observed edges:
+    - positive inductive
+    - positive historical
+    - negative inductive
+    - negative historical
+  """
+
+  def __init__(self, src_list, dst_list, ts_list, last_ts_train_val, NEG_SAMPLE='hist_nre_MC', seed=None, rnd_sample_ratio=0):
+    """
+    'src_list', 'dst_list', 'ts_list' are related to the full data! All possible edges in train, validation, test
+    """
+    if not NEG_SAMPLE == 'hist_nre_MC':
+      raise ValueError("MC: Undefined Negative Edge Sampling Strategy!")
+
+    self.seed = None
+    self.neg_sample = NEG_SAMPLE
+    self.rnd_sample_ratio = rnd_sample_ratio
+    self.src_list = src_list
+    self.dst_list = dst_list
+    self.ts_list = ts_list
+    self.src_list_distinct = np.unique(src_list)
+    self.dst_list_distinct = np.unique(dst_list)
+    self.ts_list_distinct = np.unique(ts_list)
+    self.ts_init = min(self.ts_list_distinct)
+    self.ts_end = max(self.ts_list_distinct)
+    self.ts_test_split = last_ts_train_val
+    self.e_train_val_l = self.get_edges_in_time_interval(self.ts_init, self.ts_test_split)
+
+    if seed is not None:
+      self.seed = seed
+      np.random.seed(self.seed)
+      self.random_state = np.random.RandomState(self.seed)
+
+  def get_edges_in_time_interval(self, start_ts, end_ts):
+    """
+    return edges of a specific time interval
+    """
+    valid_ts_interval = (self.ts_list >= start_ts) * (self.ts_list <= end_ts)
+    interval_src_l = self.src_list[valid_ts_interval]
+    interval_dst_l = self.dst_list[valid_ts_interval]
+    interval_edges = {}
+    for src, dst in zip(interval_src_l, interval_dst_l):
+      if (src, dst) not in interval_edges:
+        interval_edges[(src, dst)] = 1
+    return interval_edges
+
+  def get_difference_edge_list(self, first_e_set, second_e_set):
+    """
+    return edges in the first_e_set that are not in the second_e_set
+    """
+    difference_e_set = set(first_e_set) - set(second_e_set)
+    src_l, dst_l = [], []
+    for e in difference_e_set:
+      src_l.append(e[0])
+      dst_l.append(e[1])
+    return np.array(src_l), np.array(dst_l)
+
+  def sample(self, size, current_split_start_ts, current_split_end_ts, for_test=False):
+    if self.neg_sample == 'hist_nre_MC':
+      neg_hist_source, neg_hist_dest, neg_rnd_source, neg_rnd_dest = self.sample_hist_NRE(size,
+                                                                                          current_split_start_ts,
+                                                                                          current_split_end_ts,
+                                                                                          for_test)
+    else:
+      raise ValueError("Undefined Negative Edge Sampling Strategy!")
+    return neg_hist_source, neg_hist_dest, neg_rnd_source, neg_rnd_dest
+
+  def sample_hist_NRE(self, size, current_split_start_ts, current_split_end_ts, for_test):
+    """
+    NOTE: size is the total amount of random and historical negative edges
+    where there are enough edges of either type, "size/2" negative edges are historical & "size/2" are random
+    """
+    history_e_dict = self.get_edges_in_time_interval(self.ts_init, current_split_start_ts)
+    current_split_e_dict = self.get_edges_in_time_interval(current_split_start_ts, current_split_end_ts)
+    not_repeating_e_src_l, not_repeating_e_dst_l = self.get_difference_edge_list(history_e_dict,
+                                                                                 current_split_e_dict)
+    if for_test:  # when testing the models that have been trained with diverse settings
+      num_smp_rnd = int(self.rnd_sample_ratio * size)
+      num_smp_from_hist = size - num_smp_rnd
+      if num_smp_from_hist > len(not_repeating_e_src_l):
+        num_smp_from_hist = len(not_repeating_e_src_l)
+        num_smp_rnd = size - num_smp_from_hist
+    else:
+      num_smp_rnd = int(size/2)
+      num_smp_from_hist = size - num_smp_rnd
+      if num_smp_from_hist > len(not_repeating_e_src_l):  # if there aren't enough historical edges
+        num_smp_from_hist = len(not_repeating_e_src_l)
+        num_smp_rnd = size - num_smp_from_hist
+
+    replace = len(self.src_list_distinct) < num_smp_rnd
+    rnd_src_index = np.random.choice(len(self.src_list_distinct), size=num_smp_rnd, replace=replace)
+
+    replace = len(self.dst_list_distinct) < num_smp_rnd
+    rnd_dst_index = np.random.choice(len(self.dst_list_distinct), size=num_smp_rnd, replace=replace)
+
+    replace = len(not_repeating_e_src_l) < num_smp_from_hist
+    nre_e_index = np.random.choice(len(not_repeating_e_src_l), size=num_smp_from_hist, replace=replace)
+
+    neg_hist_source = not_repeating_e_src_l[nre_e_index]
+    neg_hist_dest = not_repeating_e_dst_l[nre_e_index]
+
+    neg_rnd_source = self.src_list_distinct[rnd_src_index]
+    neg_rnd_dest =  self.dst_list_distinct[rnd_dst_index]
+
+    return neg_hist_source, neg_hist_dest, neg_rnd_source, neg_rnd_dest
+
+  def get_pos_hist_and_induc_indices(self, current_split_start_ts, pos_source_l, pos_dest_l):
+    """
+    return the indices of the inductive positive edges
+    """
+    history_e_dict = self.get_edges_in_time_interval(self.ts_init, current_split_start_ts)
+    pos_induc_idx_l, pos_hist_idx_l = [], []
+    for idx, (src, dst) in enumerate(zip(pos_source_l, pos_dest_l)):
+      if (src, dst) in history_e_dict:
+        pos_hist_idx_l.append(idx)
+      else:
+        pos_induc_idx_l.append(idx)
+
+    return pos_hist_idx_l, pos_induc_idx_l
+
+  def reset_random_state(self):
+    self.random_state = np.random.RandomState(self.seed)
+
 
 
 def set_random_seed(seed):

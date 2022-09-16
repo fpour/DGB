@@ -36,21 +36,22 @@ def set_up_logger(args, sys_argv):
     # set up model parameters log
     checkpoint_root = './saved_checkpoints/'
     checkpoint_dir = checkpoint_root + runtime_id + '/'
-    best_model_root = './best_models/'
-    best_model_dir = best_model_root + runtime_id + '/'
+    # best_model_root = './best_models/'
+    # best_model_dir = best_model_root + runtime_id + '/'
     if not os.path.exists(checkpoint_root):
         os.mkdir(checkpoint_root)
         logger.info('Create directory {}'.format(checkpoint_root))
-    if not os.path.exists(best_model_root):
-        os.mkdir(best_model_root)
-        logger.info('Create directory'.format(best_model_root))
+    # if not os.path.exists(best_model_root):
+    #     os.mkdir(best_model_root)
+    #     logger.info('Create directory'.format(best_model_root))
     os.mkdir(checkpoint_dir)
-    os.mkdir(best_model_dir)
+    # os.mkdir(best_model_dir)
     logger.info('Create checkpoint directory {}'.format(checkpoint_dir))
-    logger.info('Create best model directory {}'.format(best_model_dir))
+    # logger.info('Create best model directory {}'.format(best_model_dir))
 
     get_checkpoint_path = lambda epoch: (checkpoint_dir + 'checkpoint-epoch-{}.pth'.format(epoch))
-    best_model_path = best_model_dir + 'best-model.pth'
+    # best_model_path = best_model_dir + 'best-model.pth'
+    best_model_path ='dummy!!!'
 
     return logger, get_checkpoint_path, best_model_path
 

@@ -395,6 +395,7 @@ class CAWN(torch.nn.Module):
                  pos_dim=0, pos_enc='spd', walk_pool='attn', walk_n_head=8, walk_mutual=False,
                  num_layers=3, n_head=4, drop_out=0.1, num_neighbors=20, cpu_cores=1,
                  verbosity=1, get_checkpoint_path=None, walk_linear_out=False):
+                 # num_class=1):  # MC
         super(CAWN, self).__init__()
         self.logger = logging.getLogger(__name__)
         self.verbosity = verbosity
@@ -450,7 +451,8 @@ class CAWN(torch.nn.Module):
             raise NotImplementedError('{} forward propagation strategy not implemented.'.format(self.agg))
 
         # final projection layer
-        self.affinity_score = MergeLayer(self.feat_dim, self.feat_dim, self.feat_dim, 1, non_linear=not self.walk_linear_out) #torch.nn.Bilinear(self.feat_dim, self.feat_dim, 1, bias=True)
+        self.affinity_score = MergeLayer(self.feat_dim, self.feat_dim, self.feat_dim, 1, # num_class,  # MC
+                                         non_linear=not self.walk_linear_out) #torch.nn.Bilinear(self.feat_dim, self.feat_dim, 1, bias=True)
 
         self.get_checkpoint_path = get_checkpoint_path
 
@@ -546,6 +548,28 @@ class CAWN(torch.nn.Module):
         score = self.forward(src_idx_l, tgt_idx_l, cut_time_l, (subgraph_src, subgraph_tgt), test=test)
         return score.sigmoid()
 
+    def contrast_modified_MC(self, src_idx_l, tgt_idx_l, cut_time_l, pos_e, e_idx_l=None, test=False):
+        """
+        1. grab subgraph for src, tgt, bgd
+        2. add positional encoding for src & tgt nodes
+        3. forward propagate to get src embeddings and tgt embeddings (and finally pos_score (shape: [batch, ]))
+        4. forward propagate to get src embeddings and bgd embeddings (and finally neg_score (shape: [batch, ]))
+        """
+        start = time.time()
+
+        src_idx_l = [int(s) for s in src_idx_l]
+        tgt_idx_l = [int(t) for t in tgt_idx_l]
+
+        subgraph_src = self.grab_subgraph(src_idx_l, cut_time_l, e_idx_l=e_idx_l)
+        subgraph_tgt = self.grab_subgraph(tgt_idx_l, cut_time_l, e_idx_l=e_idx_l)
+
+        end = time.time()
+        if self.verbosity > 1:
+            self.logger.info('grab subgraph for the minibatch, time eclipsed: {} seconds'.format(str(end-start)))
+        self.flag_for_cur_edge = pos_e
+        score = self.forward(src_idx_l, tgt_idx_l, cut_time_l, (subgraph_src, subgraph_tgt), test=test)
+        return score
+
     def forward(self, src_idx_l, tgt_idx_l, cut_time_l, subgraphs=None, test=False):
         if subgraphs is not None:
             subgraph_src, subgraph_tgt = subgraphs
@@ -566,6 +590,43 @@ class CAWN(torch.nn.Module):
         #     self.walk_encodings_scores['scores'].append(score_walk)
 
         return score
+
+    def get_embeddings(self, src_idx_l, tgt_idx_l, cut_time_l, pos_e, e_idx_l=None, test=False):
+        # --------------------------------
+        # from "contrast_modified_MC"
+        start = time.time()
+
+        src_idx_l = [int(s) for s in src_idx_l]
+        tgt_idx_l = [int(t) for t in tgt_idx_l]
+
+        subgraph_src = self.grab_subgraph(src_idx_l, cut_time_l, e_idx_l=e_idx_l)
+        subgraph_tgt = self.grab_subgraph(tgt_idx_l, cut_time_l, e_idx_l=e_idx_l)
+        subgraphs = (subgraph_src, subgraph_tgt)
+
+        end = time.time()
+        if self.verbosity > 1:
+            self.logger.info('grab subgraph for the minibatch, time eclipsed: {} seconds'.format(str(end - start)))
+        self.flag_for_cur_edge = pos_e
+
+        # ------------------------------------------
+        # from "forward"
+        if subgraphs is not None:
+            subgraph_src, subgraph_tgt = subgraphs
+        else: # not used in our code but is still a useful branch when negative sample is not provided
+            subgraph_src = self.grab_subgraph(src_idx_l, cut_time_l, e_idx_l=None)  # TODO: self.grab_subgraph(), with e_idx_l
+            subgraph_tgt = self.grab_subgraph(tgt_idx_l, cut_time_l, e_idx_l=None)
+        self.position_encoder.init_internal_data(src_idx_l, tgt_idx_l, cut_time_l, subgraph_src, subgraph_tgt)
+
+        if self.agg == 'walk':  #TODO: can we do this later to save position coding time, since walk-based has too much redundancy?
+            subgraph_src = self.subgraph_tree2walk(src_idx_l, cut_time_l, subgraph_src)
+            subgraph_tgt = self.subgraph_tree2walk(tgt_idx_l, cut_time_l, subgraph_tgt)
+        src_embed = self.forward_msg(src_idx_l, cut_time_l, subgraph_src, test=test)
+        tgt_embed = self.forward_msg(tgt_idx_l, cut_time_l, subgraph_tgt, test=test)
+
+        if self.agg == 'walk' and self.walk_mutual:
+            src_embed, tgt_embed = self.tune_msg(src_embed, tgt_embed)
+
+        return src_embed, tgt_embed
 
     def grab_subgraph(self, src_idx_l, cut_time_l, e_idx_l=None):
         subgraph = self.ngh_finder.find_k_hop(self.num_layers, src_idx_l, cut_time_l, num_neighbors=self.num_neighbors, e_idx_l=e_idx_l)

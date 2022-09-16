@@ -52,6 +52,8 @@ def get_args():
     parser.add_argument('--test_ratio', type=float, default=0.15, help='Ratio of test set.')
     parser.add_argument('--n_runs', type=int, default=1, help='Number of runs')
     parser.add_argument('--neg_sample', type=str, default='rnd', help='Strategy for the edge negative sampling.')
+    parser.add_argument('--tr_var', type=str, default='standard',
+                        help='The training variation that was used to train the model.', choices=['standard', 'MC'])
 
 
     try:
