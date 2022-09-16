@@ -16,16 +16,14 @@ The ranking of different methods changes in the proposed negative sampling setti
 
 ## Running the experiments
 
-### Requirements
-* `python >= 3.7`, `PyTorch >= 1.4`
-* Other requirements:
-
+### Set up Environment
 ```{bash}
-pandas==1.1.0
-scikit_learn==0.23.1
-tqdm==4.41.1
-numpy==1.16.4
-matploblib==3.3.1
+conda create -n dgb python=3.9
+```
+
+then run 
+```{bash}
+source install.sh
 ```
 
 #### Datasets and Processing
@@ -135,6 +133,16 @@ python visualization/TET_plots.py
 
 The outputs are saved in *"visualization/figs/TEA"* or *"visualization/figs/TET"* folder for the *TEA* or *TET* plots, respectively.
 
+### Environment Requirements
+* `python >= 3.7`, `PyTorch >= 1.4`
+* Other requirements:
+```{bash}
+pandas==1.1.0
+scikit_learn==0.23.1
+tqdm==4.41.1
+numpy==1.16.4
+matploblib==3.3.1
+```
 
 ### Maintenance Plan
 Since investigation of temporal graphs has significant impacts on several domains, we plan to develop and extend this project in several ways.
