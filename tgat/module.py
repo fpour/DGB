@@ -392,7 +392,7 @@ class AttnModel(torch.nn.Module):
 class TGAN(torch.nn.Module):
     def __init__(self, ngh_finder, n_feat, e_feat,
                  attn_mode='prod', use_time='time', agg_method='attn', node_dim=None, time_dim=None,
-                 num_layers=3, n_head=4, null_idx=0, num_heads=1, drop_out=0.1, seq_len=None):
+                 num_layers=3, n_head=4, null_idx=0, num_heads=1, drop_out=0.1, seq_len=None, num_class=1):
         super(TGAN, self).__init__()
 
         self.num_layers = num_layers
@@ -414,6 +414,8 @@ class TGAN(torch.nn.Module):
 
         self.use_time = use_time
         self.merge_layer = MergeLayer(self.feat_dim, self.feat_dim, self.feat_dim, self.feat_dim)
+
+        self.num_class = num_class
 
         if agg_method == 'attn':
             self.logger.info('Aggregation uses attention model')
@@ -450,7 +452,7 @@ class TGAN(torch.nn.Module):
             raise ValueError('invalid time option!')
 
         self.affinity_score = MergeLayer(self.feat_dim, self.feat_dim, self.feat_dim,
-                                         1)  # torch.nn.Bilinear(self.feat_dim, self.feat_dim, 1, bias=True)
+                                         self.num_class)  # torch.nn.Bilinear(self.feat_dim, self.feat_dim, 1, bias=True)
 
     def forward(self, src_idx_l, target_idx_l, cut_time_l, num_neighbors=20):
 
@@ -474,6 +476,13 @@ class TGAN(torch.nn.Module):
         target_embed = self.tem_conv(target_idx_l, cut_time_l, self.num_layers, num_neighbors)
         score = self.affinity_score(src_embed, target_embed).squeeze(dim=-1)
         return score.sigmoid()
+
+    def contrast_modified_MC(self, src_idx_l, target_idx_l, cut_time_l, num_neighbors=20):
+        cut_time_l = cut_time_l[: len(src_idx_l)]
+        src_embed = self.tem_conv(src_idx_l, cut_time_l, self.num_layers, num_neighbors)
+        target_embed = self.tem_conv(target_idx_l, cut_time_l, self.num_layers, num_neighbors)
+        score = self.affinity_score(src_embed, target_embed).squeeze(dim=-1)
+        return score
 
     def tem_conv(self, src_idx_l, cut_time_l, curr_layers, num_neighbors=20):
         assert (curr_layers >= 0)

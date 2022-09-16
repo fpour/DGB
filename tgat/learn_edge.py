@@ -15,7 +15,7 @@ from sklearn.metrics import *
 
 from module import TGAN
 from graph import get_neighbor_finder
-from utils import EarlyStopMonitor, RandEdgeSampler, eval_one_epoch_original
+from utils import EarlyStopMonitor, RandEdgeSampler, eval_one_epoch_modified
 from data_processing import get_data_link_pred
 
 ### Argument and global variables
@@ -99,6 +99,12 @@ node_features, edge_features, full_data, train_data, val_data, test_data, new_no
                        different_new_nodes_between_val_and_test=args.different_new_nodes,
                        randomize_features=args.randomize_features)
 
+if DATA in ['enron', 'socialevolve', 'uci', 'lastfm', 'copenhagen']:
+    node_zero_padding = np.zeros((node_features.shape[0], 172 - node_features.shape[1]))
+    node_features = np.concatenate([node_features, node_zero_padding], axis=1)
+    edge_zero_padding = np.zeros((edge_features.shape[0], 172 - edge_features.shape[1]))
+    edge_features = np.concatenate([edge_features, edge_zero_padding], axis=1)
+
 # Initialize training neighbor finder to retrieve temporal graph
 train_ngh_finder = get_neighbor_finder(train_data, args.uniform)
 
@@ -131,8 +137,8 @@ for i in range(args.n_runs):
     tgan = TGAN(train_ngh_finder, node_features, edge_features,
                 num_layers=NUM_LAYER, use_time=USE_TIME, agg_method=AGG_METHOD, attn_mode=ATTN_MODE,
                 seq_len=SEQ_LEN, n_head=NUM_HEADS, drop_out=DROP_OUT, node_dim=NODE_DIM, time_dim=TIME_DIM)
-    optimizer = torch.optim.Adam(tgan.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.BCELoss()
+    optimizer = torch.optim.Adam(tgan.parameters(), lr=LEARNING_RATE)
     tgan = tgan.to(device)
 
     num_instance = len(train_data.sources)
@@ -171,7 +177,8 @@ for i in range(args.n_runs):
 
             optimizer.zero_grad()
             tgan = tgan.train()
-            pos_prob, neg_prob = tgan.contrast_original(src_l_cut, dst_l_cut, dst_l_fake, ts_l_cut, NUM_NEIGHBORS)
+            pos_prob = tgan.contrast_modified(src_l_cut, dst_l_cut, ts_l_cut, NUM_NEIGHBORS)
+            neg_prob = tgan.contrast_modified(src_l_cut, dst_l_fake, ts_l_cut, NUM_NEIGHBORS)
 
             loss = criterion(pos_prob, pos_label)
             loss += criterion(neg_prob, neg_label)
@@ -193,12 +200,12 @@ for i in range(args.n_runs):
         # validation phase use all information
         tgan.ngh_finder = full_ngh_finder
         val_ap, val_auc_roc, val_avg_measures_dict = \
-            eval_one_epoch_original('val for old nodes', tgan, val_rand_sampler, val_data.sources,
+            eval_one_epoch_modified('val for old nodes', tgan, val_rand_sampler, val_data.sources,
                                     val_data.destinations, val_data.timestamps, val_data.labels, NUM_NEIGHBORS)
 
         if DATA != 'uci':
             nn_val_ap, nn_val_auc_roc, nn_val_avg_measures_dict = \
-                eval_one_epoch_original('val for new nodes', tgan, val_rand_sampler, new_node_val_data.sources,
+                eval_one_epoch_modified('val for new nodes', tgan, val_rand_sampler, new_node_val_data.sources,
                                         new_node_val_data.destinations, new_node_val_data.timestamps, new_node_val_data.labels, NUM_NEIGHBORS)
 
         logger.info('epoch: {}:'.format(epoch))
@@ -222,11 +229,11 @@ for i in range(args.n_runs):
     # testing phase use all information
     tgan.ngh_finder = full_ngh_finder
     test_ap, test_auc_roc, test_avg_measures_dict = \
-        eval_one_epoch_original('test for old nodes', tgan, test_rand_sampler, test_data.sources,
+        eval_one_epoch_modified('test for old nodes', tgan, test_rand_sampler, test_data.sources,
                                 test_data.destinations, test_data.timestamps, test_data.labels, NUM_NEIGHBORS)
 
     nn_test_ap, nn_test_auc_roc, nn_test_avg_measures_dict = \
-        eval_one_epoch_original('test for new nodes', tgan, nn_test_rand_sampler, new_node_test_data.sources,
+        eval_one_epoch_modified('test for new nodes', tgan, nn_test_rand_sampler, new_node_test_data.sources,
                                 new_node_test_data.destinations, new_node_test_data.timestamps, new_node_test_data.labels, NUM_NEIGHBORS)
 
     logger.info(
@@ -248,7 +255,7 @@ for i in range(args.n_runs):
     per_run_time = time.time() - run_start_time
     logger.info('Run {} took {:.2f}s.'.format(i, per_run_time))
 
-    logger.info('Saving TGAN model')
+    logger.info('Saving TGAN model; TGAT')
     MODEL_SAVE_PATH = f'./saved_models/{args.prefix}-{args.agg_method}-{args.attn_mode}-{args.data}-{i}.pth'
     torch.save(tgan.state_dict(), MODEL_SAVE_PATH)
     logger.info('TGAN models saved')

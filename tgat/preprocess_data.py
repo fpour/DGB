@@ -1,4 +1,11 @@
-
+"""
+This is the exact copy of TGN/utils/preprocess_data.py
+Just to preprocess and save edge lists as it is required for TGAT
+"""
+"""
+Goal: to convert the initial edge list of the network to the appropriate format needed by the model
+Note the "pre" in the name of the file: preprocess_data.py
+"""
 
 import json
 import numpy as np
@@ -19,7 +26,7 @@ def preprocess(data_name, n_node_feat):
       u = int(e[0])  # user_id
       i = int(e[1])  # item_id
 
-      ts = float(e[2])  # timestamp  --> assumed in ascending order
+      ts = float(e[2])  # timestamp  --> assumed in ascending order (I've checked it)
       label = float(e[3])  # int(e[3])  # state_label
 
       feat = np.array([float(x) for x in e[4:]] + [0 for _ in range(n_node_feat - (4+1))])  # edge features

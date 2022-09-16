@@ -1,4 +1,8 @@
-
+"""
+Similar to the file with the same name in the TGN
+Goal: to generate full, train, validation, and test split of the data in appropriate format used by TGAT model
+Date: 09/14/2021
+"""
 import numpy as np
 import random
 import pandas as pd
@@ -27,7 +31,7 @@ def get_data_link_pred(dataset_name, val_pointer, test_pointer, different_new_no
     node_features = np.load('./data/ml_{}_node.npy'.format(dataset_name))
 
     # additional for CAW data specifically
-    if dataset_name in ['enron', 'socialevolve', 'uci']:
+    if dataset_name in ['enron', 'socialevolve', 'uci', 'copenhagen']:
         node_zero_padding = np.zeros((node_features.shape[0], 172 - node_features.shape[1]))
         node_features = np.concatenate([node_features, node_zero_padding], axis=1)
         edge_zero_padding = np.zeros((edge_features.shape[0], 172 - edge_features.shape[1]))

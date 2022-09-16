@@ -233,5 +233,6 @@ for run_idx in range(args.n_runs):
     test_auc, test_loss = eval_epoch(test_data.sources, test_data.destinations, test_data.timestamps,
                                      test_data.labels, BATCH_SIZE, lr_model, tgan, num_layer=NODE_LAYER, debug=True,
                                      partial_name=f"{DATA};ts;{run_idx}")
+    # torch.save(lr_model.state_dict(), './saved_models/edge_{}_wkiki_node_class.pth'.format(DATA))
     logger.info(f'Run: {run_idx}, test auc: {test_auc}')
     logger.info('>>> Forward pass for run {} - test, took {} seconds.'.format(run_idx, time.time() - one_pass_start_time))

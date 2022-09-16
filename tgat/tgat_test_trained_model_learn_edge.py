@@ -1,5 +1,7 @@
 """
 load a trained model for link prediction and test its performance on a set of positive and negative edges
+
+Date: Jan. 24, 2022
 """
 
 import math
