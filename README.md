@@ -147,7 +147,7 @@ matploblib==3.3.1
 ### Maintenance Plan
 Since investigation of temporal graphs has significant impacts on several domains, we plan to develop and extend this project in several ways.
 In particular, we plan on the following directions:
-* Including more tem temporal graph datasets from even larger selection of domains; e.g. biological, chemical graphs, etc.
+* Including more temporal graph datasets from even larger selection of domains; e.g. biological, chemical graphs, etc.
 * Including additional temporal graph learning methods as they become available.
 * Including inductive link prediction settings.
 
