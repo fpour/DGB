@@ -1,5 +1,12 @@
 # Towards Better Evaluation for Dynamic Link Prediction
 
+[![arXiv](https://img.shields.io/badge/arXiv-2205.12454-b31b1b.svg)](https://arxiv.org/pdf/2207.10128.pdf)
+[![NeurIPS](https://img.shields.io/badge/NeurIPS-OpenReview-red)](https://openreview.net/forum?id=1GVpwr2Tfdg)
+
+[Dataset Repo](https://zenodo.org/record/7213796#.Y1cO6y8r30o)
+
+[Blog Post](https://medium.com/@shenyanghuang1996/towards-better-link-prediction-in-dynamic-graphs-cdb8bb1e24e9)
+
 
 
 ## Introduction
@@ -27,7 +34,7 @@ source install.sh
 ```
 
 #### Datasets and Processing
-All dynamic graph datasets can be downloaded from [here](https://zenodo.org/record/7008205#.YxtIwi0r1hC).
+All dynamic graph datasets can be downloaded from [here](https://zenodo.org/record/7213796#.Y1cO6y8r30o).
 Then, they can be located in *"DG_data"* folder.
 For conducting any experiments, the required data should be in the **data** folder under each model of interest.
 * For example, to train a *TGN* model on *Wikipedia* dataset, we can use the following command to move the edgelist to the right folder:
