@@ -169,7 +169,7 @@ If this work is useful for your research, please cite us:
 ```bibtex
 @inproceedings{dgb_neurips_D&B_2022,
     title={Towards Better Evaluation for Dynamic Link Prediction},
-    author={Farimah Poursafaei and Shenyang Huang and Kellin Pelrine and and Reihaneh Rabbany},
+    author={Poursafaei, Farimah and Huang, Shenyang and Pelrine, Kellin and and Rabbany, Reihaneh},
     booktitle={Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks},
     year={2022}
 }
