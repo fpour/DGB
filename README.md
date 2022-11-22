@@ -160,14 +160,14 @@ In particular, we plan on the following directions:
 
 
 ### Acknowledgment
-We would like to thank the authors of [TGAT](https://github.com/StatsDLMathsRecomSys/Inductive-representation-learning-on-temporal-graphs), [TGN](https://github.com/twitter-research/tgn), and [CAWN](https://github.com/snap-stanford/CAW) projects for providing access to their projects' code.
+We would like to thank the authors of [TGAT](https://github.com/StatsDLMathsRecomSys/Inductive-representation-learning-on-temporal-graphs), [TGN](https://github.com/twitter-research/tgn), and [CAWN](https://github.com/snap-stanford/CAW) for providing access to their projects' code.
 
 
 ## Citation
 If this work is useful for your research, please cite us:
 
 ```bibtex
-@inproceedings{dgb_neurips_2022,
+@inproceedings{dgb_neurips_D&B_2022,
     title={Towards Better Evaluation for Dynamic Link Prediction},
     author={Farimah Poursafaei and Shenyang Huang and Kellin Pelrine and and Reihaneh Rabbany},
     booktitle={Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks},
