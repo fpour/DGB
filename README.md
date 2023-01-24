@@ -6,7 +6,7 @@
 [![Blog Post](https://img.shields.io/badge/Medium-Blog-brightgreen)](https://medium.com/@shenyanghuang1996/towards-better-link-prediction-in-dynamic-graphs-cdb8bb1e24e9)
 
 * All dynamic graph datasets can be downloaded from [here](https://zenodo.org/record/7213796#.Y1cO6y8r30o).
-* Our package is now available on [pip](https://pypi.org/project/dgb/) (*pip install dgb*). Detailed documentation can be found [here](https://complexdata.ml/docs/proj-tg/dgb/start/).
+* Our package is now available on [pip](https://pypi.org/project/dgb/) (*pip install dgb*). Detailed documentations can be found [here](https://complexdata.ml/docs/proj-tg/dgb/start/).
 
 
 
